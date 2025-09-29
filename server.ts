@@ -14,7 +14,7 @@ app.post('/identify', async (req, res) => {
     return res.status(400).json({ error: 'Email or phoneNumber is required' });
   }
 
-  // Step 1: Find all contacts with matching email or phoneNumber
+  // Step 1: Find all contacts matching email or phoneNumber
   const contacts = await prisma.contact.findMany({
     where: {
       OR: [
@@ -26,7 +26,7 @@ app.post('/identify', async (req, res) => {
   });
 
   if (contacts.length === 0) {
-    // No contact found, create a new primary contact
+    // No contacts exist, create a primary contact
     const newContact = await prisma.contact.create({
       data: {
         email,
@@ -45,12 +45,57 @@ app.post('/identify', async (req, res) => {
     });
   }
 
-  // Existing contacts found - will need to consolidate them
-  // TODO: Implement full logic for linking contacts, managing primary and secondary
+  // Step 2: Find primary contact (oldest with linkPrecedence 'primary')
+  const primaryContact = contacts.find(c => c.linkPrecedence === 'primary') || contacts[0]!;
 
-  // For now, send back found contacts for further steps
+  // Step 3: Retrieve all contacts linked to primary (by id or linkedId)
+  const linkedContacts = await prisma.contact.findMany({
+    where: {
+      OR: [
+        { id: primaryContact.id },
+        { linkedId: primaryContact.id }
+      ]
+    }
+  });
 
-  return res.status(200).json({ contacts });
+  // Step 4: Prepare unique emails & phoneNumbers arrays
+  const emailsSet = new Set<string>();
+  const phoneNumbersSet = new Set<string>();
+  const secondaryContactIds: number[] = [];
+
+  linkedContacts.forEach(contact => {
+    if (contact.email) emailsSet.add(contact.email);
+    if (contact.phoneNumber) phoneNumbersSet.add(contact.phoneNumber);
+    if (contact.linkPrecedence === 'secondary') secondaryContactIds.push(contact.id);
+  });
+
+  // Step 5: Check if incoming email or phoneNumber are new - if yes, create secondary contact
+  const isEmailNew = email ? !emailsSet.has(email) : false;
+  const isPhoneNew = phoneNumber ? !phoneNumbersSet.has(phoneNumber) : false;
+
+  if (isEmailNew || isPhoneNew) {
+    const newSecondary = await prisma.contact.create({
+      data: {
+        email,
+        phoneNumber,
+        linkPrecedence: 'secondary',
+        linkedId: primaryContact.id,
+      }
+    });
+
+    secondaryContactIds.push(newSecondary.id);
+    if (email) emailsSet.add(email);
+    if (phoneNumber) phoneNumbersSet.add(phoneNumber);
+  }
+
+  return res.status(200).json({
+    contact: {
+      primaryContatctId: primaryContact.id,
+      emails: Array.from(emailsSet),
+      phoneNumbers: Array.from(phoneNumbersSet),
+      secondaryContactIds,
+    }
+  });
 });
 
 app.listen(PORT, () => {
