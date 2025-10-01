@@ -45,6 +45,25 @@ app.post('/identify', async (req, res) => {
     });
   }
 
+  // Step 1.5: Handle linking multiple primary contacts
+  const primaryContacts = contacts.filter(c => c.linkPrecedence === 'primary');
+  if (primaryContacts.length > 1) {
+    // Sort by creation date, oldest becomes the main primary
+    primaryContacts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const mainPrimary = primaryContacts[0]!;
+    
+    // Convert other primaries to secondary, linked to main primary
+    for (let i = 1; i < primaryContacts.length; i++) {
+      await prisma.contact.update({
+        where: { id: primaryContacts[i]!.id },
+        data: {
+          linkPrecedence: 'secondary',
+          linkedId: mainPrimary.id
+        }
+      });
+    }
+  }
+
   // Step 2: Find primary contact (oldest with linkPrecedence 'primary')
   const primaryContact = contacts.find(c => c.linkPrecedence === 'primary') || contacts[0]!;
 
