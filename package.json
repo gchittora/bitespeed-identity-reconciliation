@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node server.ts"
+    "start": "npm run build && node dist/app.js",
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc",
+    "start:prod": "node dist/app.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +19,7 @@
     "@types/node": "^24.5.2",
     "prisma": "^6.16.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.2"
   },
   "dependencies": {
