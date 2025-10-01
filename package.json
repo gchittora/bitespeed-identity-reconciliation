@@ -1,8 +1,8 @@
 {
   "name": "bitespeed-identity-reconciliation",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Identity reconciliation service for linking customer contacts",
+  "main": "dist/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run build && node dist/app.js",
