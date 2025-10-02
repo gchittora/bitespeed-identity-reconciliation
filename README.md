@@ -2,6 +2,21 @@
 
 A Node.js web service for identity reconciliation that helps link different contact information (email and phone number) to the same customer across multiple purchases.
 
+## 🚀 Live Deployment
+
+**API Endpoint:** https://bitespeed-identity-reconciliation-3-w6ok.onrender.com
+
+### Quick Test:
+```bash
+# Health Check
+curl https://bitespeed-identity-reconciliation-3-w6ok.onrender.com/health
+
+# Identify Contact
+curl -X POST https://bitespeed-identity-reconciliation-3-w6ok.onrender.com/identify \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "phoneNumber": "1234567890"}'
+```
+
 ## Task Overview
 
 This service solves the problem of identifying and tracking a customer's identity across multiple purchases when they use different email addresses and phone numbers. The service intelligently links contacts and maintains a primary-secondary relationship between them.

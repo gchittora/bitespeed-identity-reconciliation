@@ -33,6 +33,19 @@ class Application {
   }
 
   private setupRoutes(): void {
+    // Root endpoint
+    this.app.get('/', (req, res) => {
+      res.status(200).json({
+        message: 'Bitespeed Identity Reconciliation API',
+        version: '1.0.0',
+        endpoints: {
+          health: 'GET /health',
+          identify: 'POST /identify'
+        },
+        documentation: 'https://github.com/gchittora/bitespeed-identity-reconciliation'
+      });
+    });
+
     // Health check endpoint
     this.app.get('/health', (req, res) => {
       res.status(200).json({ 
