@@ -59,7 +59,7 @@ src/
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- MySQL database
+- PostgreSQL database
 - npm or yarn
 
 ### Installation
@@ -71,8 +71,10 @@ npm install
 
 2. Set up environment variables:
 ```bash
-cp .env.example .env
-# Edit .env with your database URL and other configuration
+# Create a .env file with the following:
+DATABASE_URL="postgresql://username:password@hostname:5432/database_name"
+NODE_ENV="development"
+PORT=3000
 ```
 
 3. Run database migrations:
@@ -167,10 +169,92 @@ Structured logging is implemented throughout the application:
 - Error logging with stack traces
 - Business logic logging for debugging
 
-## Contributing
+## Technical Stack
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- **Backend Framework:** Node.js with Express.js
+- **Language:** TypeScript
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Deployment:** Render.com
+- **Architecture:** Layered (Controllers → Services → Repositories)
+
+## Key Features Implemented
+
+✅ **Identity Linking:** Automatically links contacts based on common email or phone number  
+✅ **Primary-Secondary Relationships:** Maintains oldest contact as primary, others as secondary  
+✅ **Contact Consolidation:** Converts multiple primary contacts to a single primary with multiple secondaries  
+✅ **Comprehensive Validation:** Email format and required field validation  
+✅ **Error Handling:** Proper HTTP status codes and error messages  
+✅ **Type Safety:** Full TypeScript implementation with strict mode  
+✅ **Structured Logging:** Request/response and error logging throughout  
+✅ **Clean Architecture:** Separation of concerns with clear layer boundaries  
+
+## Database Schema
+
+```sql
+CREATE TABLE "Contact" (
+    "id" SERIAL PRIMARY KEY,
+    "phoneNumber" TEXT,
+    "email" TEXT,
+    "linkedId" INTEGER,
+    "linkPrecedence" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deletedAt" TIMESTAMP(3)
+);
+```
+
+## Example Usage
+
+### Scenario 1: Create New Contact
+```bash
+curl -X POST https://bitespeed-identity-reconciliation-3-w6ok.onrender.com/identify \
+  -H "Content-Type: application/json" \
+  -d '{"email": "lorraine@hillvalley.edu", "phoneNumber": "123456"}'
+```
+
+**Response:**
+```json
+{
+  "contact": {
+    "primaryContatctId": 1,
+    "emails": ["lorraine@hillvalley.edu"],
+    "phoneNumbers": ["123456"],
+    "secondaryContactIds": []
+  }
+}
+```
+
+### Scenario 2: Link Contact with New Email
+```bash
+curl -X POST https://bitespeed-identity-reconciliation-3-w6ok.onrender.com/identify \
+  -H "Content-Type: application/json" \
+  -d '{"email": "mcfly@hillvalley.edu", "phoneNumber": "123456"}'
+```
+
+**Response:**
+```json
+{
+  "contact": {
+    "primaryContatctId": 1,
+    "emails": ["lorraine@hillvalley.edu", "mcfly@hillvalley.edu"],
+    "phoneNumbers": ["123456"],
+    "secondaryContactIds": [2]
+  }
+}
+```
+
+### Scenario 3: Primary-to-Secondary Conversion
+When two separate primary contacts are linked (e.g., same person using different email/phone for different orders), the older primary remains primary and the newer converts to secondary.
+
+## License
+
+MIT
+
+## Author
+
+Garvit Chittora
+
+## Repository
+
+https://github.com/gchittora/bitespeed-identity-reconciliation
